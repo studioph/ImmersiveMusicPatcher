@@ -11,7 +11,7 @@ namespace ImmersiveMusicPatcher
 {
     public class Program
     {
-        private static readonly ModKey ImmersiveMusic = ModKey.FromNameAndExtension("ImmersiveMusic.esp");
+        private static readonly ModKey ImmersiveMusic = ModKey.FromNameAndExtension("Immersive Music.esp");
 
         public static async Task<int> Main(string[] args)
         {
@@ -20,7 +20,7 @@ namespace ImmersiveMusicPatcher
                 .SetTypicalOpen(GameRelease.SkyrimSE, "ImmersiveMusicPatcher.esp")
                 .AddRunnabilityCheck(state =>
                 {
-                    state.LoadOrder.AssertListsMod(ImmersiveMusic, "\n\nMissing ImmersiveMusic.esp\n\n");
+                    state.LoadOrder.AssertListsMod(ImmersiveMusic, "\n\nMissing Immersive Music.esp\n\n");
                 })
                 .Run(args);
         }
