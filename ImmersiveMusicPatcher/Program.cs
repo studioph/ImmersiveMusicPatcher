@@ -46,6 +46,31 @@ namespace ImmersiveMusicPatcher
                 .SelectMany(worldspaceBlock => worldspaceBlock.Items)
                 .SelectMany(worldspaceSubBlock => worldspaceSubBlock.Items);
             worldspaceCellsToPatch.ForEach(cell => PatchCell(cell, state));
+
+            masterWorldspaces.Records.ForEach(worldspace => PatchWorldspace(worldspace, state));
+        }
+
+        private static void PatchWorldspace(IWorldspaceGetter worldspace, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
+        {
+            // Check if worldspace music type matches one in immersive music otherwise deep copy and set in patcher
+            if (!worldspace
+                .ToLink()
+                .TryResolveContext<ISkyrimMod, ISkyrimModGetter, IWorldspace, IWorldspaceGetter>(
+                    state.LinkCache,
+                    out var winningWorldspace)
+            ) return;
+
+            // Don't patch if music type matches existing
+            if (worldspace.Music.Equals(winningWorldspace.Record.Music))
+            {
+                return;
+            }
+
+            var patchWorldspace = winningWorldspace.GetOrAddAsOverride(state.PatchMod);
+            if (!worldspace.Music.IsNull)
+            {
+                patchWorldspace.Music.FormKey = worldspace.Music.FormKey;
+            }
         }
 
         private static void PatchCell(ICellGetter cell, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
