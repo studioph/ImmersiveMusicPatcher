@@ -6,5 +6,9 @@
     "PreferredAutoVersioning": "Default",
     "RequiredMods": [
       "Immersive Music.esp"
+    ],
+    "TargetedReleases": [
+      "SkyrimSE",
+      "SkyrimSEGog"
     ]
   }
