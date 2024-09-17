@@ -50,6 +50,7 @@ namespace ImmersiveMusicPatcher
             .ForEach(worldspace => PatchWorldspace(worldspace, state));
         }
 
+        // Have to have 2 separate but almost identical methods due to lack of aspect interface
         private static void PatchWorldspace(IWorldspaceGetter worldspace, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
             // Check if worldspace music type matches one in immersive music otherwise deep copy and set in patcher
