@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Synthesis;
@@ -32,22 +29,25 @@ namespace ImmersiveMusicPatcher
             {
                 return;
             }
-            var masterCells = immersiveMusicEsp.Mod.Cells;
-            var masterWorldspaces = immersiveMusicEsp.Mod.Worldspaces;
-            // var ocwPatchEsp = "OCW_MusicPatch_IM.esp";
+            var affectedCells = immersiveMusicEsp.Mod.Cells;
+            var affectedWorldspaces = immersiveMusicEsp.Mod.Worldspaces;
 
-            var interiorCellsToPatch = masterCells.Records
+            var interiorCellsToPatch = affectedCells.Records
                 .SelectMany(cellBlock => cellBlock.SubBlocks)
-                .SelectMany(subBlock => subBlock.Cells);
+                .SelectMany(subBlock => subBlock.Cells)
+                .Where(cell => cell.Music is not null);
             interiorCellsToPatch.ForEach(cell => PatchCell(cell, state));
 
-            var worldspaceCellsToPatch = masterWorldspaces.Records
+            var worldspaceCellsToPatch = affectedWorldspaces.Records
                 .SelectMany(worldspace => worldspace.SubCells)
                 .SelectMany(worldspaceBlock => worldspaceBlock.Items)
-                .SelectMany(worldspaceSubBlock => worldspaceSubBlock.Items);
+                .SelectMany(worldspaceSubBlock => worldspaceSubBlock.Items)
+                .Where(cell => cell.Music is not null);
             worldspaceCellsToPatch.ForEach(cell => PatchCell(cell, state));
 
-            masterWorldspaces.Records.ForEach(worldspace => PatchWorldspace(worldspace, state));
+            affectedWorldspaces.Records
+            .Where(worldspace => worldspace.Music is not null)
+            .ForEach(worldspace => PatchWorldspace(worldspace, state));
         }
 
         private static void PatchWorldspace(IWorldspaceGetter worldspace, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
@@ -58,19 +58,21 @@ namespace ImmersiveMusicPatcher
                 .TryResolveContext<ISkyrimMod, ISkyrimModGetter, IWorldspace, IWorldspaceGetter>(
                     state.LinkCache,
                     out var winningWorldspace)
-            ) return;
+            )
+            {
+                Console.WriteLine($"WARNING: Unable to resolve FormKey: {worldspace.FormKey}, skipping worldspace");
+                return;
+            }
 
-            // Don't patch if music type matches existing
+            // Don't patch if music type already matches
             if (worldspace.Music.Equals(winningWorldspace.Record.Music))
             {
                 return;
             }
 
             var patchWorldspace = winningWorldspace.GetOrAddAsOverride(state.PatchMod);
-            if (!worldspace.Music.IsNull)
-            {
-                patchWorldspace.Music.FormKey = worldspace.Music.FormKey;
-            }
+            patchWorldspace.Music.FormKey = worldspace.Music.FormKey;
+            Console.WriteLine($"Patched MusicType for worldspace {worldspace}");
         }
 
         private static void PatchCell(ICellGetter cell, IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
@@ -81,19 +83,21 @@ namespace ImmersiveMusicPatcher
                 .TryResolveContext<ISkyrimMod, ISkyrimModGetter, ICell, ICellGetter>(
                     state.LinkCache,
                     out var winningCellContext)
-            ) return;
+            )
+            {
+                Console.WriteLine($"WARNING: Unable to resolve FormKey: {cell.FormKey}, skipping cell");
+                return;
+            }
 
-            // Don't patch if music type matches existing
+            // Don't patch if music type already matches
             if (cell.Music.Equals(winningCellContext.Record.Music))
             {
                 return;
             }
 
             var patchCell = winningCellContext.GetOrAddAsOverride(state.PatchMod);
-            if (!cell.Music.IsNull)
-            {
-                patchCell.Music.FormKey = cell.Music.FormKey;
-            }
+            patchCell.Music.FormKey = cell.Music.FormKey;
+            Console.WriteLine($"Patched MusicType for cell {cell}");
         }
     }
 }
