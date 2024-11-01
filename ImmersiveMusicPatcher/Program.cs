@@ -12,6 +12,16 @@ namespace ImmersiveMusicPatcher
             "Immersive Music.esp"
         );
 
+        private static SkyrimForwardPipeline _pipeline = null!;
+
+        private static readonly PluginLoader<ISkyrimMod, ISkyrimModGetter> _loader = new();
+
+        // Register optional plugins with loader
+        static Program()
+        {
+            _loader.Register<OCWPlugin>((mod) => new OCWPlugin(mod, _pipeline));
+        }
+
         public static async Task<int> Main(string[] args)
         {
             return await SynthesisPipeline
@@ -29,45 +39,21 @@ namespace ImmersiveMusicPatcher
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
+            _pipeline = new SkyrimForwardPipeline(state.PatchMod);
             var immersiveMusic = state.LoadOrder.GetIfEnabledAndExists(ImmersiveMusic);
-            var affectedCells = immersiveMusic.Cells;
-            var affectedWorldspaces = immersiveMusic.Worldspaces;
+            var mainPlugin = new MusicPatcherPlugin(immersiveMusic, _pipeline);
+            var loadedPlugins = _loader.Scan(state.LoadOrder);
 
-            var pipeline = new SkyrimForwardPipeline(state.PatchMod);
+            // Patch main IM mod
+            mainPlugin.Run(state);
 
-            var interiorCellsToPatch = affectedCells
-                .Records.SelectMany(cellBlock => cellBlock.SubBlocks)
-                .SelectMany(subBlock => subBlock.Cells)
-                .Where(cell => cell.Music is not null);
+            // Run any optional plugins based on load order
+            foreach (var plugin in loadedPlugins)
+            {
+                plugin.Run(state);
+            }
 
-            var worldspaceCellsToPatch = affectedWorldspaces
-                .Records.SelectMany(worldspace => worldspace.SubCells)
-                .SelectMany(worldspaceBlock => worldspaceBlock.Items)
-                .SelectMany(worldspaceSubBlock => worldspaceSubBlock.Items)
-                .Where(cell => cell.Music is not null);
-
-            var cellsContextsToPatch = interiorCellsToPatch
-                .Concat(worldspaceCellsToPatch)
-                .Select(cell =>
-                    cell.WithContext<ISkyrimMod, ISkyrimModGetter, ICell, ICellGetter>(
-                        state.LinkCache
-                    )
-                );
-
-            pipeline.Run(CellMusicPatcher.Instance, cellsContextsToPatch);
-
-            var worldspacesToPatch = affectedWorldspaces
-                .Records.Where(worldspace => worldspace.Music is not null)
-                .Select(worldspace =>
-                    worldspace.WithContext<
-                        ISkyrimMod,
-                        ISkyrimModGetter,
-                        IWorldspace,
-                        IWorldspaceGetter
-                    >(state.LinkCache)
-                );
-
-            pipeline.Run(WorldspaceMusicPatcher.Instance, worldspacesToPatch);
+            Console.WriteLine($"Patched {_pipeline.PatchedCount} records");
         }
     }
 }
