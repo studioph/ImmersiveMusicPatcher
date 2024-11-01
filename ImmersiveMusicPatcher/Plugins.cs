@@ -58,6 +58,9 @@ public class OCWPlugin(ISkyrimModGetter mod, SkyrimForwardPipeline pipeline)
     private static readonly ModKey OCW_MusicPatch_IM = ModKey.FromNameAndExtension(
         "OCW_MusicPatch_IM.esp"
     );
+    private static readonly ModKey OCW_CellSettings = ModKey.FromNameAndExtension(
+        "OCW_CellSettings.esp"
+    );
 
-    public static PluginData Data => new(OCW_MusicPatch_IM);
+    public static PluginData Data => new(nameof(OCWPlugin), OCW_MusicPatch_IM, OCW_CellSettings);
 }
