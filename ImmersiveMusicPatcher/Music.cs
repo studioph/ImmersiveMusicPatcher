@@ -29,11 +29,19 @@ namespace ImmersiveMusicPatcher
         IFormLinkNullableGetter<IMusicTypeGetter> Music { get; }
     }
 
+    /// <summary>
+    /// DTO Containing a reference (source) and winning MusicType values for a record
+    /// </summary>
+    /// <param name="Source">A reference value from a particular mod</param>
+    /// <param name="Winning">The value from the winning record</param>
     public sealed record MusicTypes(
         IFormLinkNullableGetter<IMusicTypeGetter> Source,
         IFormLinkNullableGetter<IMusicTypeGetter> Winning
     );
 
+    /// <summary>
+    /// Patcher for forwarding MusicType property on cells and worldspaces
+    /// </summary>
     public class MusicPatcher : IForwardPatcher<IHasMusic, IHasMusicGetter, MusicTypes>
     {
         public static readonly MusicPatcher Instance = new();
