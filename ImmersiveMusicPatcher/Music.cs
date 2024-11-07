@@ -1,34 +1,9 @@
-using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
-using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Skyrim;
 using Synthesis.Util;
 
 namespace ImmersiveMusicPatcher
 {
-    /// <summary>
-    /// Common interface for records with a MusicType
-    /// </summary>
-    [CustomAspectInterface(typeof(ICell), typeof(IWorldspace))]
-    public interface IHasMusic : ISkyrimMajorRecord, IHasMusicGetter
-    {
-        new IFormLinkNullable<IMusicTypeGetter> Music { get; }
-    }
-
-    /// <summary>
-    /// Common interface for records with a MusicType
-    /// </summary>
-    [CustomAspectInterface(
-        typeof(ICell),
-        typeof(ICellGetter),
-        typeof(IWorldspace),
-        typeof(IWorldspaceGetter)
-    )]
-    public interface IHasMusicGetter : ISkyrimMajorRecordGetter
-    {
-        IFormLinkNullableGetter<IMusicTypeGetter> Music { get; }
-    }
-
     /// <summary>
     /// DTO Containing a reference (source) and winning MusicType values for a record
     /// </summary>
@@ -39,17 +14,30 @@ namespace ImmersiveMusicPatcher
         IFormLinkNullableGetter<IMusicTypeGetter> Winning
     );
 
-    /// <summary>
-    /// Patcher for forwarding MusicType property on cells and worldspaces
-    /// </summary>
-    public class MusicPatcher : IForwardPatcher<IHasMusic, IHasMusicGetter, MusicTypes>
+    // Need 2 almost identical implementations due to lack of aspect interface
+    public class CellMusicPatcher : IForwardPatcher<ICell, ICellGetter, MusicTypes>
     {
-        public static readonly MusicPatcher Instance = new();
+        public static readonly CellMusicPatcher Instance = new();
 
-        public MusicTypes Analyze(IHasMusicGetter source, IHasMusicGetter target) =>
+        public MusicTypes Analyze(ICellGetter source, ICellGetter target) =>
             new(source.Music, target.Music);
 
-        public void Patch(IHasMusic target, MusicTypes music) => target.Music.SetTo(music.Source);
+        public void Patch(ICell target, MusicTypes music) =>
+            target.Music.FormKey = music.Source.FormKey;
+
+        public bool ShouldPatch(MusicTypes values) => !values.Winning.Equals(values.Source);
+    }
+
+    public class WorldspaceMusicPatcher
+        : IForwardPatcher<IWorldspace, IWorldspaceGetter, MusicTypes>
+    {
+        public static readonly WorldspaceMusicPatcher Instance = new();
+
+        public MusicTypes Analyze(IWorldspaceGetter source, IWorldspaceGetter target) =>
+            new(source.Music, target.Music);
+
+        public void Patch(IWorldspace target, MusicTypes music) =>
+            target.Music.FormKey = music.Source.FormKey;
 
         public bool ShouldPatch(MusicTypes values) => !values.Winning.Equals(values.Source);
     }
