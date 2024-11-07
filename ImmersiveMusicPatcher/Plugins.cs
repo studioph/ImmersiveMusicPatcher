@@ -20,26 +20,19 @@ public class MusicPatcherPlugin(ISkyrimModGetter mod, SkyrimForwardPipeline pipe
 
     public void Run(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
     {
-        var cellsToPatch = _mod.GetAllCells()
-            .Where(cell => cell.Music is not null)
-            .Select(cell =>
-                cell.WithContext<ISkyrimMod, ISkyrimModGetter, ICell, ICellGetter>(state.LinkCache)
+        var cellsToPatch = _mod.GetAllCells().Cast<IHasMusicGetter>();
+        var worldspacesToPatch = _mod.Worldspaces.Cast<IHasMusicGetter>();
+
+        var recordsToPatch = cellsToPatch
+            .Concat(worldspacesToPatch)
+            .Where(record => record.Music is not null)
+            .Select(record =>
+                record.WithContext<ISkyrimMod, ISkyrimModGetter, IHasMusic, IHasMusicGetter>(
+                    state.LinkCache
+                )
             );
 
-        _pipeline.Run(CellMusicPatcher.Instance, cellsToPatch);
-
-        var worldspacesToPatch = _mod
-            .Worldspaces.Where(worldspace => worldspace.Music is not null)
-            .Select(worldspace =>
-                worldspace.WithContext<
-                    ISkyrimMod,
-                    ISkyrimModGetter,
-                    IWorldspace,
-                    IWorldspaceGetter
-                >(state.LinkCache)
-            );
-
-        _pipeline.Run(WorldspaceMusicPatcher.Instance, worldspacesToPatch);
+        _pipeline.Run(MusicPatcher.Instance, recordsToPatch);
     }
 }
 
