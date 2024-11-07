@@ -2,8 +2,8 @@
     "Nickname": "ImmersiveMusicPatcher",
     "Visibility": "Visible",
     "OneLineDescription": "Forwards Immersive Music Edits",
-    "LongDescription": "- Forwards MusicType records from Immersive Music to winning cell and worldspace records.",
-    "PreferredAutoVersioning": "Default",
+    "LongDescription": "Forwards MusicType records from Immersive Music to winning cell and worldspace records.",
+    "PreferredAutoVersioning": "LatestTag",
     "RequiredMods": [
       "Immersive Music.esp"
     ],
